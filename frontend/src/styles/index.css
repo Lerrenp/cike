@@ -1,0 +1,132 @@
+/* ============================================================
+   「此刻」全局样式 —— 极简清新，柔和暖 / 偏红棕色调（对标小红书）
+   断点：移动端 ≤768 / 平板 769-1200 / 电脑端 ≥1201
+   ============================================================ */
+:root {
+  /* 品牌主色：柔和偏红棕 */
+  --cike-primary: #ff2442;
+  --cike-primary-dark: #e01e38;
+  --cike-primary-soft: #ffebeef0;
+  --cike-warm: #b4532a;
+  --cike-bg: #f7f7f7;
+  --cike-card: #ffffff;
+  --cike-text: #1f2329;
+  --cike-text-2: #5f6672;
+  --cike-text-3: #969ba6;
+  --cike-border: #ececec;
+  --cike-radius: 14px;
+  --cike-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  --cike-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.1);
+
+  --header-h: 56px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  color: var(--cike-text);
+  background: var(--cike-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: #d5d5d5;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #bebebe;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* -------------------- Element Plus 主题覆盖 -------------------- */
+.el-button--primary {
+  --el-button-bg-color: var(--cike-primary);
+  --el-button-border-color: var(--cike-primary);
+  --el-button-hover-bg-color: var(--cike-primary-dark);
+  --el-button-hover-border-color: var(--cike-primary-dark);
+  --el-button-active-bg-color: var(--cike-primary-dark);
+  --el-button-active-border-color: var(--cike-primary-dark);
+}
+
+/* -------------------- 通用工具类 -------------------- */
+.page-container {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  padding-bottom: calc(60px + env(safe-area-inset-bottom));
+}
+
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ellipsis-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* 页面切换动画 */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* -------------------- 断点适配 -------------------- */
+/* 平板 (769-1200) */
+@media (min-width: 769px) {
+  :root {
+    --header-h: 60px;
+  }
+}
+
+/* 电脑端 (≥1201) */
+@media (min-width: 1201px) {
+  :root {
+    --header-h: 64px;
+  }
+}

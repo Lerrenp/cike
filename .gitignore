@@ -1,0 +1,20 @@
+# ---- 前端 ----
+node_modules/
+dist/
+*.local
+.vscode/*
+!.vscode/extensions.json
+
+# ---- 后端 ----
+target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+*.log
+
+# ---- IDE / OS ----
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+.bcryptgen/
