@@ -11,12 +11,14 @@ import com.cike.entity.User;
 import com.cike.mapper.UserMapper;
 import com.cike.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 认证服务：短信验证码、注册、登录、退出
@@ -28,14 +30,19 @@ public class AuthServiceImpl implements AuthService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final StringRedisTemplate stringRedisTemplate;
+
+    private static final String SMS_PREFIX = "sms:code:";
 
     @Override
     public Map<String, String> sendSmsCode(SmsCodeRequest request) {
         if (request.getPhone() == null || request.getPhone().isBlank()) {
             throw new BusinessException(400, "手机号不能为空");
         }
-        // 开发环境：直接生成本地验证码并明文返回（无 Redis / 短信服务）
+        String scene = request.getScene() == null ? "register" : request.getScene();
+        // 生成验证码并写入 Redis（TTL 5 分钟）；开发环境同时明文返回
         String code = String.format("%06d", ThreadLocalRandom.current().nextInt(1000000));
+        stringRedisTemplate.opsForValue().set(SMS_PREFIX + scene + ":" + request.getPhone(), code, 5, TimeUnit.MINUTES);
         Map<String, String> data = new HashMap<>();
         data.put("code", code);
         return data;
@@ -55,6 +62,11 @@ public class AuthServiceImpl implements AuthService {
         if (request.getNickname() == null || request.getNickname().isBlank()) {
             throw new BusinessException(400, "昵称不能为空");
         }
+        // 校验 Redis 中缓存的验证码（注册场景）
+        String cached = stringRedisTemplate.opsForValue().get(SMS_PREFIX + "register:" + request.getPhone());
+        if (cached == null || !cached.equals(request.getCode())) {
+            throw new BusinessException(400, "验证码错误或已过期");
+        }
         Long exists = userMapper.selectCount(Wrappers.<User>lambdaQuery().eq(User::getPhone, request.getPhone()));
         if (exists != null && exists > 0) {
             throw new BusinessException(400, "该手机号已注册");
@@ -69,6 +81,9 @@ public class AuthServiceImpl implements AuthService {
         user.setNoteCount(0);
         user.setLikeTotal(0);
         userMapper.insert(user);
+
+        // 验证码一次性使用，注册成功后删除
+        stringRedisTemplate.delete(SMS_PREFIX + "register:" + request.getPhone());
 
         String token = jwtUtil.createToken(user.getId());
         return new LoginVO(token, user);
