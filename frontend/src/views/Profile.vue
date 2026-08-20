@@ -5,23 +5,34 @@
     <div class="profile-main" :class="{ 'with-side': isDesktop }">
       <header class="p-top">
         <span class="p-title">{{ isSelf ? '我的' : '个人主页' }}</span>
-        <el-dropdown v-if="isSelf" trigger="click" @command="onAccount">
-          <span class="more"><el-icon><Setting /></el-icon></span>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="edit"><el-icon><Edit /></el-icon>编辑资料</el-dropdown-item>
-              <el-dropdown-item command="logout" divided><el-icon><SwitchButton /></el-icon>退出登录</el-dropdown-item>
-            </el-dropdown-menu>
+
+        <!-- 设置菜单（本人可见） -->
+        <v-menu v-if="isSelf" :close-on-content-click="false">
+          <template #activator="{ props }">
+            <v-btn v-bind="props" variant="text" icon class="more">
+              <v-icon icon="mdi-dots-horizontal" />
+            </v-btn>
           </template>
-        </el-dropdown>
+          <v-list density="compact" class="settings-menu">
+            <v-list-item @click="openEdit">
+              <template #prepend><v-icon icon="mdi-pencil" /></template>
+              <v-list-item-title>编辑资料</v-list-item-title>
+            </v-list-item>
+            <v-list-item @click="logout">
+              <template #prepend><v-icon icon="mdi-logout" color="error" /></template>
+              <v-list-item-title class="text-error">退出登录</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
       </header>
 
       <div class="p-body">
         <!-- 个人信息卡 -->
         <section class="profile-card">
-          <el-avatar :size="72" :src="viewUser.avatar" class="p-avatar">
-            {{ (viewUser.nickname || 'U').charAt(0) }}
-          </el-avatar>
+          <v-avatar size="72" class="p-avatar">
+            <v-img v-if="viewUser.avatar" :src="viewUser.avatar" cover />
+            <span v-else>{{ (viewUser.nickname || 'U').charAt(0) }}</span>
+          </v-avatar>
           <div class="p-info">
             <div class="p-nickname">{{ viewUser.nickname || '未设置昵称' }}</div>
             <div class="p-bio">{{ viewUser.bio || '这个人很懒，什么都没有写~' }}</div>
@@ -45,38 +56,89 @@
         </section>
 
         <!-- tab 切换 -->
-        <nav class="tabs">
-          <div
-            v-for="t in tabs"
-            :key="t.value"
-            class="tab"
-            :class="{ active: activeTab === t.value }"
-            @click="switchTab(t.value)"
-          >
+        <v-tabs v-model="activeTab" class="tabs" @update:model-value="onTabChange">
+          <v-tab v-for="t in tabs" :key="t.value" :value="t.value" class="tab">
             {{ t.label }}
-          </div>
-        </nav>
+          </v-tab>
+        </v-tabs>
 
         <!-- 内容列表 -->
         <section class="notes-list">
           <div v-if="noteList.length" class="notes-grid">
             <NoteCard v-for="n in noteList" :key="n.id" :note="n" />
           </div>
-          <el-empty v-else-if="!loadingList" description="这里内容空空如也~" />
-          <div v-if="loadingList" class="list-loading"><span class="spinner" /></div>
+          <div v-else-if="!loadingList" class="empty">
+            <v-icon icon="mdi-image-outline" size="48" class="empty-icon" />
+            <p>这里内容空空如也~</p>
+          </div>
+          <div v-if="loadingList" class="list-loading">
+            <v-progress-circular indeterminate color="primary" :size="24" width="3" />
+          </div>
         </section>
       </div>
 
       <!-- 底部 tab（非本人查看也显示，方便返回） -->
       <TabBar v-if="!isDesktop" />
     </div>
+
+    <!-- 编辑资料弹窗 -->
+    <v-dialog v-model="editDialog" max-width="420" persistent>
+      <v-card class="edit-card" rounded="xl">
+        <v-card-title class="edit-title">编辑资料</v-card-title>
+        <v-card-text>
+          <v-text-field
+            v-model="editForm.avatar"
+            label="头像地址"
+            placeholder="https://..."
+            prepend-inner-icon="mdi-image"
+            outlined
+            class="mb-3"
+          />
+          <v-text-field
+            v-model="editForm.nickname"
+            label="昵称"
+            prepend-inner-icon="mdi-account"
+            outlined
+            :rules="[nickRule]"
+            class="mb-3"
+          />
+          <v-textarea
+            v-model="editForm.bio"
+            label="个人简介"
+            prepend-inner-icon="mdi-text"
+            outlined
+            rows="3"
+            auto-grow
+          />
+        </v-card-text>
+        <v-card-actions class="edit-actions">
+          <v-spacer />
+          <v-btn variant="text" @click="editDialog = false">取消</v-btn>
+          <v-btn color="primary" :loading="saving" @click="saveProfile">保存</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- 退出登录确认 -->
+    <v-dialog v-model="logoutDialog" max-width="360">
+      <v-card rounded="xl">
+        <v-card-text class="logout-text">
+          确定要退出登录吗？
+        </v-card-text>
+        <v-card-actions class="edit-actions">
+          <v-spacer />
+          <v-btn variant="text" @click="logoutDialog = false">取消</v-btn>
+          <v-btn color="error" @click="confirmLogout">退出</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { toast } from '@/utils/toast'
 import NoteCard from '@/components/NoteCard.vue'
 import TabBar from '@/components/TabBar.vue'
 import SideNav from '@/components/SideNav.vue'
@@ -116,6 +178,60 @@ const isSelf = computed(
 const viewUid = computed(() =>
   isSelf.value ? userStore.userId : Number(route.query.uid)
 )
+
+// ---------- 编辑资料 ----------
+const editDialog = ref(false)
+const saving = ref(false)
+const editForm = reactive({ avatar: '', nickname: '', bio: '' })
+
+function nickRule(v) {
+  return v && v.trim() ? true : '昵称不能为空'
+}
+
+function openEdit() {
+  editForm.avatar = viewUser.avatar || ''
+  editForm.nickname = viewUser.nickname || ''
+  editForm.bio = viewUser.bio || ''
+  editDialog.value = true
+}
+
+async function saveProfile() {
+  if (!editForm.nickname || !editForm.nickname.trim()) {
+    toast.warning('昵称不能为空')
+    return
+  }
+  saving.value = true
+  try {
+    const data = {
+      avatar: editForm.avatar.trim(),
+      nickname: editForm.nickname.trim(),
+      bio: editForm.bio
+    }
+    await userApi.update(viewUid.value, data)
+    userStore.updateUserInfo(data)
+    await loadUserInfo()
+    editDialog.value = false
+    toast.success('资料修改成功')
+  } catch (e) {
+    /* 拦截器已提示 */
+  } finally {
+    saving.value = false
+  }
+}
+
+// ---------- 退出登录 ----------
+const logoutDialog = ref(false)
+
+function logout() {
+  logoutDialog.value = true
+}
+
+async function confirmLogout() {
+  await userStore.logout()
+  logoutDialog.value = false
+  toast.success('已退出登录')
+  router.replace('/login')
+}
 
 async function loadUserInfo() {
   if (!viewUid.value) return
@@ -157,47 +273,9 @@ async function loadList() {
   }
 }
 
-function switchTab(value) {
+function onTabChange(value) {
   activeTab.value = value
   loadList()
-}
-
-// ---------- 账号操作 ----------
-async function onAccount(command) {
-  if (command === 'edit') {
-    editProfile()
-  } else if (command === 'logout') {
-    logout()
-  }
-}
-
-function editProfile() {
-  ElMessageBox.prompt('请输入新的昵称', '修改昵称', {
-    inputValue: viewUser.nickname,
-    inputValidator: (v) => (v && v.trim() ? true : '昵称不能为空')
-  })
-    .then(async ({ value }) => {
-      try {
-        await userApi.update(viewUid.value, { nickname: value.trim() })
-        await loadUserInfo()
-        ElMessage.success('昵称修改成功')
-      } catch (e) {}
-    })
-    .catch(() => {})
-}
-
-function logout() {
-  ElMessageBox.confirm('确定要退出登录吗？', '退出提示', {
-    confirmButtonText: '退出',
-    cancelButtonText: '取消',
-    type: 'warning'
-  })
-    .then(async () => {
-      await userStore.logout()
-      ElMessage.success('已退出登录')
-      router.replace('/login')
-    })
-    .catch(() => {})
 }
 
 // 未登录访问个人中心跳到登录
@@ -229,66 +307,64 @@ watch(() => route.query.uid, () => {
   position: sticky;
   top: 0;
   z-index: 50;
-  height: var(--header-h);
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
-  background: #fff;
-  border-bottom: 1px solid var(--cike-border);
+  padding: 0 8px 0 16px;
+  background: var(--v-theme-surface);
+  border-bottom: 1px solid rgb(var(--v-theme-outline-variant));
 }
 .p-title {
   font-size: 17px;
   font-weight: 600;
+  color: rgb(var(--v-theme-on-surface));
 }
 .more {
-  display: flex;
-  align-items: center;
-  font-size: 20px;
-  cursor: pointer;
-  color: var(--cike-text-2);
-  padding: 8px;
+  color: rgb(var(--v-theme-on-surface-variant));
 }
 .p-body {
   max-width: 720px;
   margin: 0 auto;
-  padding: 20px 16px calc(60px + env(safe-area-inset-bottom));
+  padding: 20px 16px calc(72px + env(safe-area-inset-bottom));
 }
 .profile-card {
   display: flex;
   align-items: center;
   gap: 16px;
-  background: linear-gradient(135deg, #fff5f1, #ffe9e6);
-  border-radius: 16px;
+  background: rgb(var(--v-theme-surface-light));
+  border-radius: 20px;
   padding: 20px;
 }
 .p-avatar {
   flex-shrink: 0;
-  background: var(--cike-primary-soft);
-  color: var(--cike-primary);
+  background: rgb(var(--v-theme-primary-container));
+  color: rgb(var(--v-theme-on-primary-container));
   font-size: 28px;
+  font-weight: 600;
 }
 .p-nickname {
   font-size: 20px;
   font-weight: 700;
+  color: rgb(var(--v-theme-on-surface));
   margin-bottom: 6px;
 }
 .p-bio {
   font-size: 13px;
-  color: var(--cike-text-2);
+  color: rgb(var(--v-theme-on-surface-variant));
 }
 .stats {
   display: flex;
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: var(--cike-shadow);
+  background: var(--v-theme-surface);
+  border-radius: 16px;
+  border: 1px solid rgb(var(--v-theme-outline-variant));
   margin-top: 16px;
   padding: 16px 0;
 }
 .stat {
   flex: 1;
   text-align: center;
-  border-right: 1px solid var(--cike-border);
+  border-right: 1px solid rgb(var(--v-theme-outline-variant));
 }
 .stat:last-child {
   border-right: none;
@@ -296,38 +372,21 @@ watch(() => route.query.uid, () => {
 .stat .num {
   font-size: 20px;
   font-weight: 700;
-  color: var(--cike-text);
+  color: rgb(var(--v-theme-on-surface));
 }
 .stat .label {
   margin-top: 4px;
   font-size: 12px;
-  color: var(--cike-text-3);
+  color: rgb(var(--v-theme-on-surface-variant));
 }
 .tabs {
-  display: flex;
   margin-top: 20px;
-  background: #fff;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid var(--cike-border);
+  background: var(--v-theme-surface) !important;
+  border: 1px solid rgb(var(--v-theme-outline-variant));
+  border-radius: 14px;
 }
-.tab {
-  flex: 1;
-  text-align: center;
-  padding: 12px 0;
-  font-size: 14px;
-  color: var(--cike-text-2);
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all 0.15s ease;
-}
-.tab:hover {
-  color: var(--cike-primary);
-}
-.tab.active {
-  color: var(--cike-primary);
+.tabs :deep(.v-tab) {
   font-weight: 600;
-  border-bottom-color: var(--cike-primary);
 }
 .notes-list {
   margin-top: 20px;
@@ -345,19 +404,32 @@ watch(() => route.query.uid, () => {
   text-align: center;
   padding: 20px 0;
 }
-.spinner {
-  display: inline-block;
-  width: 24px;
-  height: 24px;
-  border: 2px solid #eee;
-  border-top-color: var(--cike-primary);
-  border-radius: 50%;
-  animation: rotate 0.8s linear infinite;
+.empty {
+  text-align: center;
+  padding: 48px 0;
+  color: rgb(var(--v-theme-on-surface-variant));
 }
-@keyframes rotate {
-  to {
-    transform: rotate(360deg);
-  }
+.empty-icon {
+  opacity: 0.4;
+  margin-bottom: 8px;
+}
+.empty p {
+  font-size: 14px;
+}
+.settings-menu {
+  border-radius: 12px;
+}
+.edit-card {
+  padding-top: 8px;
+}
+.edit-title {
+  font-weight: 700;
+}
+.edit-actions {
+  padding: 8px 16px 16px;
+}
+.logout-text {
+  font-size: 15px;
 }
 
 /* 电脑端：左信息右内容 */

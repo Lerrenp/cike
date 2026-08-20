@@ -50,7 +50,7 @@ public class NoteServiceImpl implements NoteService {
                 .eq(Note::getVisible, 1)
                 .eq(Note::getStatus, 1);
 
-        if (TOPIC_CATEGORIES.contains(category)) {
+        if (category != null && TOPIC_CATEGORIES.contains(category)) {
             // 按话题分类过滤
             Topic topic = topicMapper.selectOne(
                     Wrappers.<Topic>lambdaQuery().eq(Topic::getTopicName, "#" + category));

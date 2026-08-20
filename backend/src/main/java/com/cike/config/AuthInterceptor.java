@@ -24,6 +24,12 @@ public class AuthInterceptor implements HandlerInterceptor {
         if (HttpMethod.OPTIONS.matches(request.getMethod())) {
             return true;
         }
+        // 匿名只读：笔记列表(/notes)与详情(/notes/{id}) 无需登录（不注入用户上下文）
+        String uri = request.getRequestURI();
+        if (HttpMethod.GET.matches(request.getMethod())
+                && (uri.endsWith("/notes") || uri.matches(".*/notes/\\d+"))) {
+            return true;
+        }
         String header = request.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);

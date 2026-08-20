@@ -42,7 +42,7 @@ public class AuthServiceImpl implements AuthService {
         String scene = request.getScene() == null ? "register" : request.getScene();
         // 生成验证码并写入 Redis（TTL 5 分钟）；开发环境同时明文返回
         String code = String.format("%06d", ThreadLocalRandom.current().nextInt(1000000));
-        stringRedisTemplate.opsForValue().set(SMS_PREFIX + scene + ":" + request.getPhone(), code, 5, TimeUnit.MINUTES);
+        stringRedisTemplate.opsForValue().set(SMS_PREFIX + scene + ":" + request.getPhone(), code, 120, TimeUnit.SECONDS);
         Map<String, String> data = new HashMap<>();
         data.put("code", code);
         return data;

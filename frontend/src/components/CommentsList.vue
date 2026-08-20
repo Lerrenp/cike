@@ -1,15 +1,15 @@
 <template>
   <div class="comments-list" v-if="comments.length">
     <div v-for="c in comments" :key="c.id || c.commentId" class="comment-item" @click="onClickComment(c)">
-      <el-avatar :size="32" :src="c.user?.avatar" class="c-avatar">
+      <v-avatar size="32" class="c-avatar" :image="c.user?.avatar">
         {{ (c.user?.nickname || 'U').charAt(0) }}
-      </el-avatar>
+      </v-avatar>
       <div class="c-body">
         <div class="c-head">
           <span class="c-nick">{{ c.user?.nickname || '匿名用户' }}</span>
-          <span v-if="isMine(c)" class="delete" @click.stop="removeComment(c)">
-            <el-icon><Delete /></el-icon>
-          </span>
+          <v-btn v-if="isMine(c)" icon size="x-small" variant="text" class="c-delete" @click.stop="removeComment(c)">
+            <v-icon size="16">mdi-delete</v-icon>
+          </v-btn>
         </div>
         <p class="c-text" v-if="!c.replyUser">{{ c.content }}</p>
         <p class="c-text" v-else>
@@ -27,7 +27,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { ElMessage } from 'element-plus'
+import { toast } from '@/utils/toast'
 import { interactApi } from '@/api/interact'
 import { useUserStore } from '@/stores/user'
 
@@ -53,7 +53,7 @@ async function removeComment(c) {
   if (!confirm('确定删除这条评论吗？')) return
   try {
     await interactApi.deleteComment(c.id != null ? c.id : c.commentId)
-    ElMessage.success('删除成功')
+    toast.success('删除成功')
     emit('refresh')
   } catch (e) {}
 }
@@ -78,8 +78,9 @@ function onReply(c) {
 }
 .c-avatar {
   flex-shrink: 0;
-  background: var(--cike-primary-soft);
-  color: var(--cike-primary);
+  background: rgb(var(--v-theme-primary-container));
+  color: rgb(var(--v-theme-on-primary-container));
+  font-size: 14px;
 }
 .c-body {
   flex: 1;
@@ -92,26 +93,24 @@ function onReply(c) {
 }
 .c-nick {
   font-size: 13px;
-  color: var(--cike-text-2);
+  color: rgb(var(--v-theme-on-surface-variant));
   font-weight: 500;
 }
-.delete {
-  color: var(--cike-text-3);
-  cursor: pointer;
-  font-size: 14px;
+.c-delete {
+  color: rgb(var(--v-theme-on-surface-variant));
 }
-.delete:hover {
-  color: var(--cike-primary);
+.c-delete:hover {
+  color: rgb(var(--v-theme-error));
 }
 .c-text {
   font-size: 14px;
   line-height: 1.5;
-  color: var(--cike-text);
+  color: rgb(var(--v-theme-on-surface));
   margin-top: 2px;
   word-break: break-word;
 }
 .reply-to {
-  color: var(--cike-primary);
+  color: rgb(var(--v-theme-primary));
 }
 .c-meta {
   display: flex;
@@ -121,18 +120,18 @@ function onReply(c) {
 }
 .c-time {
   font-size: 12px;
-  color: var(--cike-text-3);
+  color: rgb(var(--v-theme-on-surface-variant));
 }
 .c-reply {
   font-size: 12px;
-  color: var(--cike-text-3);
+  color: rgb(var(--v-theme-on-surface-variant));
   cursor: pointer;
 }
 .c-reply:hover {
-  color: var(--cike-primary);
+  color: rgb(var(--v-theme-primary));
 }
 .no-comments {
-  color: var(--cike-text-3);
+  color: rgb(var(--v-theme-on-surface-variant));
   font-size: 13px;
   padding: 12px 0;
   text-align: center;

@@ -1,30 +1,46 @@
 <template>
-  <aside class="side-nav">
+  <v-navigation-drawer permanent floating width="220" class="side-nav" :border="false">
     <div class="brand">此刻</div>
-    <div
-      v-for="item in items"
-      :key="item.path"
-      class="nav-item"
-      :class="{ active: isActive(item) }"
-      @click="go(item)"
-    >
-      <el-icon :size="20"><component :is="item.icon" /></el-icon>
-      <span>{{ item.label }}</span>
-    </div>
-    <div class="spacer" />
-    <div class="nav-item publish" :class="{ active: isActive({ path: '/publish' }) }" @click="go({ path: '/publish' })">
-      <el-icon :size="20"><Plus /></el-icon>
-      <span>发布</span>
-    </div>
-    <div v-if="userStore.isLogin" class="nav-item" :class="{ active: isActive({ path: '/profile' }) }" @click="go({ path: '/profile' })">
-      <el-icon :size="20"><User /></el-icon>
-      <span>我的</span>
-    </div>
-    <div v-else class="nav-item" @click="go({ path: '/login' })">
-      <el-icon :size="20"><User /></el-icon>
-      <span>登录</span>
-    </div>
-  </aside>
+    <v-list density="comfortable" nav class="menu-list">
+      <v-list-item
+        v-for="item in items"
+        :key="item.path"
+        class="nav-item"
+        :class="{ active: isActive(item) }"
+        :active="isActive(item)"
+        @click="go(item)"
+      >
+        <template #prepend><v-icon :icon="item.icon" /></template>
+        <v-list-item-title>{{ item.label }}</v-list-item-title>
+      </v-list-item>
+
+      <v-list-item
+        class="nav-item publish"
+        :class="{ active: isActive({ path: '/publish' }) }"
+        :active="isActive({ path: '/publish' })"
+        @click="go({ path: '/publish' })"
+      >
+        <template #prepend><v-icon icon="mdi-plus" /></template>
+        <v-list-item-title>发布</v-list-item-title>
+      </v-list-item>
+
+      <v-list-item
+        v-if="userStore.isLogin"
+        class="nav-item"
+        :class="{ active: isActive({ path: '/profile' }) }"
+        :active="isActive({ path: '/profile' })"
+        @click="go({ path: '/profile' })"
+      >
+        <template #prepend><v-icon icon="mdi-account" /></template>
+        <v-list-item-title>我的</v-list-item-title>
+      </v-list-item>
+
+      <v-list-item v-else class="nav-item" @click="go({ path: '/login' })">
+        <template #prepend><v-icon icon="mdi-account" /></template>
+        <v-list-item-title>登录</v-list-item-title>
+      </v-list-item>
+    </v-list>
+  </v-navigation-drawer>
 </template>
 
 <script setup>
@@ -36,7 +52,7 @@ const router = useRouter()
 const userStore = useUserStore()
 
 const items = [
-  { path: '/', label: '首页', icon: 'HomeFilled' }
+  { path: '/', label: '首页', icon: 'mdi-home' }
 ]
 
 function isActive(item) {
@@ -54,44 +70,37 @@ function go(item) {
   position: fixed;
   top: 0;
   left: 0;
-  width: 220px;
   height: 100vh;
-  background: #fff;
-  border-right: 1px solid var(--cike-border);
-  padding: 24px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
   z-index: 100;
+  background: var(--v-theme-surface) !important;
 }
 .brand {
   font-size: 22px;
   font-weight: 800;
-  color: var(--cike-primary);
-  padding: 4px 12px 20px;
+  color: rgb(var(--v-theme-primary));
+  padding: 20px 16px 8px;
   letter-spacing: 2px;
 }
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  color: var(--cike-text-2);
-  font-size: 15px;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+.menu-list {
+  padding: 4px 8px;
 }
-.nav-item:hover {
-  background: var(--cike-primary-soft);
-  color: var(--cike-primary);
+.nav-item {
+  border-radius: 12px;
+  margin-bottom: 4px;
+}
+.nav-item :deep(.v-list-item__overlay) {
+  display: none;
 }
 .nav-item.active {
-  background: var(--cike-primary-soft);
-  color: var(--cike-primary);
+  background: rgb(var(--v-theme-primary-container));
+  color: rgb(var(--v-theme-on-primary-container));
   font-weight: 600;
 }
-.spacer {
-  flex: 1;
+.nav-item :deep(.v-icon) {
+  color: inherit;
+}
+.nav-item :deep(.v-list-item__prepend) {
+  margin-inline-end: 12px;
+  opacity: 1;
 }
 </style>

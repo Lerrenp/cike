@@ -1,33 +1,36 @@
 <template>
-  <div class="note-card" @click="goDetail">
+  <v-card class="note-card" rounded="xl" @click="goDetail">
     <div class="cover-wrap">
-      <img
-        :src="note.coverUrl || fallback"
-        :alt="note.title"
-        loading="lazy"
-        @error="onError"
-      />
-      <!-- 点赞角标 -->
-      <span class="like-badge" v-if="note.likeCount">
-        <el-icon><Pointer /></el-icon>
-        {{ note.likeCount }}
+      <img :src="imgSrc" :alt="note.title" loading="lazy" @error="onError" />
+      <span v-if="likeCount" class="like-badge">
+        <v-icon icon="mdi-heart" size="12" color="white" />
+        {{ likeCount }}
       </span>
     </div>
     <div class="info">
       <p class="title ellipsis-2">{{ note.title }}</p>
-      <p class="desc ellipsis" v-if="note.content">{{ note.content }}</p>
+      <div class="meta">
+        <span class="stat">
+          <v-icon icon="mdi-heart-outline" size="14" color="on-surface" />
+          {{ likeCount }}
+        </span>
+        <span class="stat">
+          <v-icon icon="mdi-bookmark-outline" size="14" color="on-surface" />
+          {{ collectCount }}
+        </span>
+      </div>
       <div class="author">
-        <el-avatar :size="20" :src="note.author?.avatar" class="avatar">
+        <v-avatar :image="note.author?.avatar" size="20" class="avatar">
           {{ (note.author?.nickname || 'U').charAt(0) }}
-        </el-avatar>
+        </v-avatar>
         <span class="name ellipsis">{{ note.author?.nickname || '未知用户' }}</span>
       </div>
     </div>
-  </div>
+  </v-card>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -45,6 +48,10 @@ const fallback =
     `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="360"><rect width="100%" height="100%" fill="#f2e8e6"/><text x="50%" y="50%" dy="8" fill="#c9a99f" font-size="16" text-anchor="middle" font-family="sans-serif">暂无封面</text></svg>`
   )
 
+const imgSrc = computed(() => props.note.coverUrl || props.note.cover_url || fallback)
+const likeCount = computed(() => Number(props.note.likeCount) || 0)
+const collectCount = computed(() => Number(props.note.collectCount) || 0)
+
 function onError(e) {
   e.target.src = fallback
 }
@@ -56,27 +63,21 @@ function goDetail() {
 
 <style scoped>
 .note-card {
-  background: var(--cike-card);
-  border-radius: var(--cike-radius);
   overflow: hidden;
   cursor: pointer;
-  box-shadow: var(--cike-shadow);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  margin-bottom: 12px;
-  break-inside: avoid;
+  transition: transform 0.2s ease;
 }
 .note-card:hover {
   transform: translateY(-3px);
-  box-shadow: var(--cike-shadow-hover);
 }
 .cover-wrap {
   position: relative;
   width: 100%;
 }
 .cover-wrap img {
+  display: block;
   width: 100%;
-  height: auto;
-  aspect-ratio: 3 / 4;
+  height: 150px;
   object-fit: cover;
   background: #f2e8e6;
 }
@@ -101,13 +102,21 @@ function goDetail() {
   font-size: 14px;
   line-height: 1.4;
   font-weight: 500;
-  color: var(--cike-text);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  color: rgb(var(--v-theme-on-surface));
 }
-.desc {
-  font-size: 12px;
-  color: var(--cike-text-3);
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
   margin-bottom: 8px;
+}
+.stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  color: rgb(var(--v-theme-on-surface-variant));
 }
 .author {
   display: flex;
@@ -116,12 +125,17 @@ function goDetail() {
 }
 .avatar {
   flex-shrink: 0;
-  background: var(--cike-primary-soft);
-  color: var(--cike-primary);
+  background: rgb(var(--v-theme-primary-container));
+  color: rgb(var(--v-theme-on-primary-container));
   font-size: 12px;
 }
 .name {
   font-size: 12px;
-  color: var(--cike-text-2);
+  color: rgb(var(--v-theme-on-surface-variant));
+}
+@media (min-width: 1201px) {
+  .cover-wrap img {
+    height: 170px;
+  }
 }
 </style>

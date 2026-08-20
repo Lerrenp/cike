@@ -35,7 +35,7 @@ CREATE TABLE `t_note` (
   `user_id` BIGINT NOT NULL COMMENT '发布者用户id',
   `title` VARCHAR(100) NOT NULL COMMENT '笔记标题',
   `content` TEXT NOT NULL COMMENT '笔记正文',
-  `cover_url` VARCHAR(255) DEFAULT '' COMMENT '封面图（取第一张图片）',
+  `cover_url` LONGTEXT DEFAULT '' COMMENT '封面图（取第一张图片，支持 base64 data URL）',
   `view_count` INT DEFAULT 0 COMMENT '浏览量',
   `like_count` INT DEFAULT 0 COMMENT '点赞数',
   `collect_count` INT DEFAULT 0 COMMENT '收藏数',
@@ -56,7 +56,7 @@ CREATE TABLE `t_note` (
 CREATE TABLE `t_note_image` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `note_id` BIGINT NOT NULL COMMENT '笔记id',
-  `image_url` VARCHAR(255) NOT NULL COMMENT '图片访问地址',
+  `image_url` LONGTEXT NOT NULL COMMENT '图片访问地址（支持 base64 data URL）',
   `sort` INT DEFAULT 0 COMMENT '图片排序序号，越小越靠前',
   `is_deleted` TINYINT DEFAULT 0,
   `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,

@@ -4,33 +4,50 @@
     <SideNav v-if="isDesktop" />
 
     <div class="home-main" :class="{ 'with-side': isDesktop }">
-      <!-- 顶部导航栏 -->
+      <!-- MD3 顶部导航栏 -->
       <header class="top-nav">
         <span class="logo" @click="go('/')">此刻</span>
         <div class="search-box" @click="focusSearch">
-          <el-icon class="search-icon"><Search /></el-icon>
-          <el-input
+          <v-text-field
             ref="searchInput"
             v-model="keyword"
             placeholder="搜索笔记、作者…"
+            prepend-inner-icon="mdi-magnify"
+            density="compact"
+            variant="solo-filled"
+            hide-details
             clearable
+            rounded="pill"
+            class="search-field"
             @keyup.enter="onSearch"
           />
         </div>
-        <button v-if="isDesktop" class="publish-btn" @click="go('/publish')">＋ 发布</button>
+        <v-btn
+          v-if="isDesktop"
+          class="publish-btn"
+          color="primary"
+          rounded="pill"
+          @click="go('/publish')"
+        >
+          <v-icon icon="mdi-plus" size="18" />
+          <span>发布</span>
+        </v-btn>
       </header>
 
-      <!-- 分类标签 -->
+      <!-- 分类标签（MD3 pill chip） -->
       <div class="category-wrap">
-        <div
+        <v-chip
           v-for="cat in categories"
           :key="cat.value"
-          class="cat-item"
-          :class="{ active: category === cat.value }"
+          class="cat-chip"
+          :color="category === cat.value ? 'primary' : 'surface-variant'"
+          :text-color="category === cat.value ? 'on-primary' : 'on-surface-variant'"
+          :variant="category === cat.value ? 'flat' : 'tonal'"
+          rounded="pill"
           @click="switchCategory(cat.value)"
         >
           {{ cat.label }}
-        </div>
+        </v-chip>
       </div>
 
       <!-- 内容流 -->
@@ -46,7 +63,7 @@
       >
         <!-- 下拉刷新提示 -->
         <div class="pull-hint" :class="{ visible: pulling }">
-          <el-icon v-if="!refreshing" :class="{ spin: pulling }"><Refresh /></el-icon>
+          <v-icon v-if="!refreshing" :class="{ spin: pulling }" icon="mdi-refresh" size="16" />
           <span>{{ refreshing ? '刷新中…' : pullText }}</span>
         </div>
 
@@ -56,18 +73,22 @@
           <span class="clear" @click="clearSearch">清除搜索</span>
         </div>
 
-        <!-- 瀑布流 -->
-        <div v-if="notes.length" class="waterfall">
+        <!-- 瀑布流（CSS Grid） -->
+        <div v-if="notes.length" class="waterfall" :class="{ 'waterfall-desktop': isDesktop }">
           <NoteCard v-for="note in notes" :key="note.id" :note="note" />
         </div>
 
         <!-- 空状态 -->
-        <el-empty v-else-if="!loading" description="还没有内容，去看看别的吧~">
-          <el-button type="primary" @click="reload">刷新看看</el-button>
-        </el-empty>
+        <div v-else-if="!loading" class="empty">
+          <v-icon icon="mdi-image-off-outline" size="48" color="outline" />
+          <p class="empty-text">还没有内容，去看看别的吧~</p>
+          <v-btn color="primary" variant="tonal" rounded="pill" @click="reload">刷新看看</v-btn>
+        </div>
 
         <!-- 加载状态 -->
-        <div v-if="loading" class="load-state"><span class="spinner" /></div>
+        <div v-if="loading" class="load-state">
+          <v-progress-circular indeterminate :size="24" color="primary" />
+        </div>
         <div v-else-if="notes.length" class="load-state end">{{ finished ? '没有更多内容啦' : '加载中…' }}</div>
       </main>
 
@@ -253,79 +274,40 @@ onUnmounted(() => {})
   align-items: center;
   gap: 16px;
   padding: 0 20px;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(251, 250, 249, 0.92);
   backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--cike-border);
+  border-bottom: 1px solid rgb(var(--v-theme-outline-variant));
 }
 .logo {
   font-size: 22px;
   font-weight: 800;
-  color: var(--cike-primary);
+  color: rgb(var(--v-theme-primary));
   letter-spacing: 2px;
   cursor: pointer;
 }
 .search-box {
   flex: 1;
   max-width: 480px;
-  display: flex;
-  align-items: center;
-  background: #f5f5f5;
-  border-radius: 20px;
-  padding: 0 12px;
 }
-.search-box .search-icon {
-  color: var(--cike-text-3);
-  margin-right: 6px;
-}
-.search-box :deep(.el-input__wrapper) {
-  background: transparent;
-  box-shadow: none;
-  padding: 0;
-}
-.search-box :deep(.el-input__inner) {
-  height: 36px;
+.search-field {
+  border-radius: 24px;
 }
 .publish-btn {
-  border: none;
-  background: var(--cike-primary);
-  color: #fff;
-  border-radius: 20px;
-  padding: 8px 18px;
-  cursor: pointer;
-  font-weight: 600;
-}
-.publish-btn:hover {
-  background: var(--cike-primary-dark);
+  flex-shrink: 0;
 }
 .category-wrap {
   position: sticky;
   top: var(--header-h);
   z-index: 40;
   display: flex;
-  gap: 10px;
+  gap: 8px;
   padding: 12px 20px;
-  background: var(--cike-bg);
+  background: rgb(var(--v-theme-background));
   overflow-x: auto;
   white-space: nowrap;
 }
-.cat-item {
+.cat-chip {
   flex-shrink: 0;
-  padding: 6px 16px;
-  border-radius: 18px;
-  font-size: 14px;
-  color: var(--cike-text-2);
-  background: #fff;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  border: 1px solid var(--cike-border);
-}
-.cat-item:hover {
-  color: var(--cike-primary);
-}
-.cat-item.active {
-  background: var(--cike-primary);
-  color: #fff;
-  border-color: var(--cike-primary);
 }
 .content {
   overflow-y: auto;
@@ -340,13 +322,11 @@ onUnmounted(() => {})
   align-items: center;
   justify-content: center;
   gap: 6px;
-  color: var(--cike-text-3);
+  color: rgb(var(--v-theme-on-surface-variant));
   font-size: 13px;
   transition: height 0.2s ease;
 }
-.pull-hint.visible {
-  height: 40px;
-}
+.pull-hint.visible,
 .pull-ready .pull-hint {
   height: 40px;
 }
@@ -360,44 +340,47 @@ onUnmounted(() => {})
 }
 .search-status {
   font-size: 13px;
-  color: var(--cike-text-2);
+  color: rgb(var(--v-theme-on-surface-variant));
   padding: 8px 4px;
 }
 .search-status .clear {
-  color: var(--cike-primary);
+  color: rgb(var(--v-theme-primary));
   cursor: pointer;
   margin-left: 8px;
 }
+/* CSS Grid 瀑布流：固定图片高度 + object-fit，替代多列布局 */
 .waterfall {
-  columns: 2;
-  column-gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  align-items: start;
 }
-@media (min-width: 769px) {
-  .waterfall {
-    columns: 3;
+.waterfall-desktop {
+  grid-template-columns: repeat(3, 1fr);
+}
+@media (min-width: 1600px) {
+  .waterfall-desktop {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
-@media (min-width: 1201px) {
-  .waterfall {
-    columns: 4;
-  }
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 60px 0;
+  color: rgb(var(--v-theme-on-surface-variant));
+}
+.empty-text {
+  font-size: 14px;
 }
 .load-state {
   text-align: center;
-  color: var(--cike-text-3);
+  color: rgb(var(--v-theme-on-surface-variant));
   font-size: 13px;
   padding: 16px 0;
 }
 .load-state.end {
-  color: var(--cike-text-3);
-}
-.spinner {
-  display: inline-block;
-  width: 22px;
-  height: 22px;
-  border: 2px solid #eee;
-  border-top-color: var(--cike-primary);
-  border-radius: 50%;
-  animation: rotate 0.8s linear infinite;
+  color: rgb(var(--v-theme-on-surface-variant));
 }
 </style>

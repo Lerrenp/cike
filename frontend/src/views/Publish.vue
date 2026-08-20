@@ -1,103 +1,135 @@
 <template>
   <div class="publish">
-    <header class="pub-top">
-      <span class="back" @click="onBack"><el-icon><ArrowLeft /></el-icon></span>
-      <span class="title">发布笔记</span>
-      <el-button
-        type="primary"
-        class="pub-btn"
-        :loading="publishing"
-        :disabled="!canPublish"
-        @click="publish"
-      >
-        发布
-      </el-button>
-    </header>
+    <v-app-bar elevation="1" color="surface" class="pub-top">
+      <template #prepend>
+        <v-btn icon variant="text" @click="onBack">
+          <v-icon>mdi-arrow-left</v-icon>
+        </v-btn>
+      </template>
+      <v-app-bar-title class="pub-title">发布</v-app-bar-title>
+      <template #append>
+        <v-btn
+          color="primary"
+          rounded="pill"
+          class="pub-btn"
+          :loading="publishing"
+          :disabled="!canPublish"
+          @click="publish"
+        >
+          发布
+        </v-btn>
+      </template>
+    </v-app-bar>
 
     <div class="pub-main">
-      <!-- 左侧/上方：图片上传预览 -->
+      <!-- 图片上传预览 -->
       <section class="img-section">
         <div class="img-grid">
-          <div v-for="(img, i) in images" :key="img.uid || i" class="img-item" :class="{ first: i === 0 }">
-            <img :src="img.url" :alt="`图片${i + 1}`" @click="download(img.url)" />
-            <span class="delete" @click="removeImage(i)" @click.stop>
-              <el-icon><Close /></el-icon>
+          <div
+            v-for="(img, i) in images"
+            :key="img.uid || i"
+            class="img-item"
+            @click="download(img.url)"
+          >
+            <img :src="img.url" :alt="`图片${i + 1}`" />
+            <span class="delete" @click.stop="removeImage(i)">
+              <v-icon size="16">mdi-close</v-icon>
             </span>
-            <span class="cover-tag" v-if="i === 0">封面</span>
+            <span v-if="i === 0" class="cover-tag">封面</span>
           </div>
           <label v-if="images.length < 9" class="img-add">
             <input type="file" accept="image/*" multiple hidden @change="onFileChange" />
-            <el-icon :size="28"><Plus /></el-icon>
+            <v-icon size="28" color="on-surface-variant">mdi-plus</v-icon>
             <span>{{ images.length }}/9</span>
           </label>
         </div>
         <p class="tip">最多上传 9 张图片，第一张为封面</p>
       </section>
 
-      <!-- 右侧/下方：编辑区 -->
+      <!-- 编辑区 -->
       <section class="edit-section">
-        <el-input
+        <v-text-field
           v-model="form.title"
           class="title-input"
           placeholder="填写标题（必填）"
           maxlength="100"
-          show-word-limit
-          @input="saveDraft"
+          counter
+          variant="plain"
+          single-line
+          hide-details="auto"
+          @update:model-value="saveDraft"
         />
-        <el-input
+
+        <v-textarea
           v-model="form.content"
-          type="textarea"
-          :rows="6"
-          resize="none"
+          rows="6"
+          auto-grow
           placeholder="记录此刻的美好瞬间…"
-          @input="saveDraft"
+          variant="solo-filled"
+          class="content-input"
+          hide-details
+          @update:model-value="saveDraft"
         />
 
         <!-- 话题选择 -->
         <div class="topic-block">
           <div class="block-label">添加话题</div>
           <div class="topic-list">
-            <span
+            <v-chip
               v-for="t in topics"
               :key="t.id"
               class="topic"
-              :class="{ active: selectedTopics.includes(t.topicName) }"
+              :color="selectedTopics.includes(t.topicName) ? 'primary' : 'surface-variant'"
+              variant="tonal"
               @click="toggleTopic(t.topicName)"
             >
+              <v-icon v-if="selectedTopics.includes(t.topicName)" start size="16">mdi-check</v-icon>
               {{ t.topicName }}
-            </span>
+            </v-chip>
           </div>
-          <div class="selected-topics" v-if="selectedTopics.length">
-            <el-tag
+          <div v-if="selectedTopics.length" class="selected-topics">
+            <v-chip
               v-for="name in selectedTopics"
               :key="name"
               closable
-              @close="removeTopic(name)"
-              type="danger"
-              effect="plain"
+              color="primary"
+              variant="tonal"
+              @click:close="removeTopic(name)"
             >
               {{ name }}
-            </el-tag>
+            </v-chip>
           </div>
         </div>
 
         <!-- 可见性 -->
         <div class="visible-block">
           <div class="block-label">可见范围</div>
-          <el-radio-group v-model="form.visible">
-            <el-radio :value="1">公开</el-radio>
-            <el-radio :value="2">仅自己可见</el-radio>
-          </el-radio-group>
+          <v-radio-group v-model="form.visible" inline>
+            <v-radio :value="1" label="公开"></v-radio>
+            <v-radio :value="2" label="仅自己可见"></v-radio>
+          </v-radio-group>
         </div>
       </section>
     </div>
+
+    <!-- 返回确认对话框 -->
+    <v-dialog v-model="showBackDialog" max-width="360">
+      <v-card class="back-dialog">
+        <v-card-title class="text-body-1 font-weight-bold">返回提示</v-card-title>
+        <v-card-text class="text-body-2">是否保存当前编辑内容为草稿？</v-card-text>
+        <v-card-actions class="justify-end px-4 pb-4">
+          <v-btn variant="text" color="on-surface-variant" @click="clearDraftAndBack">放弃</v-btn>
+          <v-btn color="primary" variant="tonal" @click="saveDraftAndBack">保存草稿</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { toast } from '@/utils/toast'
 import { noteApi } from '@/api/note'
 import { topicApi } from '@/api/topic'
 import { useUserStore } from '@/stores/user'
@@ -109,6 +141,7 @@ const images = ref([]) // { uid, url, file }
 const publishing = ref(false)
 const topics = ref([])
 const selectedTopics = ref([])
+const showBackDialog = ref(false)
 
 const DRAFT_KEY = 'cike_draft'
 
@@ -153,7 +186,7 @@ async function onFileChange(e) {
   const files = Array.from(e.target.files || [])
   const remaining = 9 - images.value.length
   if (files.length > remaining) {
-    ElMessage.warning(`最多上传 9 张图片，本次仅添加 ${remaining} 张`)
+    toast.warning(`最多上传 9 张图片，本次仅添加 ${remaining} 张`)
   }
   const picked = files.slice(0, remaining)
   for (const file of picked) {
@@ -230,8 +263,8 @@ async function loadTopics() {
 
 async function publish() {
   if (!canPublish.value) {
-    if (!images.value.length) ElMessage.warning('请至少上传一张图片')
-    else if (!form.title.trim()) ElMessage.warning('请填写标题')
+    if (!images.value.length) toast.warning('请至少上传一张图片')
+    else if (!form.title.trim()) toast.warning('请填写标题')
     return
   }
   publishing.value = true
@@ -243,7 +276,7 @@ async function publish() {
       topics: selectedTopics.value,
       visible: form.visible
     })
-    ElMessage.success('发布成功')
+    toast.success('发布成功')
     clearDraft()
     router.push('/profile')
   } catch (e) {
@@ -261,22 +294,18 @@ function onBack() {
     router.push('/')
     return
   }
-  ElMessageBox.confirm('是否保存当前编辑内容为草稿？', '返回提示', {
-    confirmButtonText: '保存草稿',
-    cancelButtonText: '放弃',
-    distinguishCancelAndClose: true
-  })
-    .then(() => {
-      saveDraft()
-      ElMessage.success('草稿已保存')
-      router.push('/')
-    })
-    .catch((action) => {
-      if (action === 'cancel') {
-        clearDraft()
-        router.push('/')
-      }
-    })
+  showBackDialog.value = true
+}
+function saveDraftAndBack() {
+  saveDraft()
+  toast.success('草稿已保存')
+  showBackDialog.value = false
+  router.push('/')
+}
+function clearDraftAndBack() {
+  clearDraft()
+  showBackDialog.value = false
+  router.push('/')
 }
 
 onMounted(() => {
@@ -292,37 +321,15 @@ onMounted(() => {
 <style scoped>
 .publish {
   min-height: 100vh;
-  background: #fff;
+  background: rgb(var(--v-theme-surface));
 }
 .pub-top {
   position: sticky;
   top: 0;
   z-index: 20;
-  height: var(--header-h);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  background: #fff;
-  border-bottom: 1px solid var(--cike-border);
 }
-.back {
-  display: flex;
-  align-items: center;
-  font-size: 18px;
-  cursor: pointer;
-  padding: 8px;
-}
-.title {
+.pub-title {
   font-weight: 600;
-  font-size: 16px;
-}
-.pub-btn {
-  border-radius: 18px;
-  padding: 8px 22px;
-}
-.pub-btn.is-disabled {
-  opacity: 0.5;
 }
 .pub-main {
   display: flex;
@@ -341,7 +348,7 @@ onMounted(() => {
 .img-add {
   position: relative;
   aspect-ratio: 1;
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
 }
 .img-item img {
@@ -349,13 +356,14 @@ onMounted(() => {
   height: 100%;
   object-fit: cover;
   cursor: pointer;
+  display: block;
 }
 .img-item .delete {
   position: absolute;
   top: 6px;
   right: 6px;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.5);
   color: #fff;
@@ -368,7 +376,7 @@ onMounted(() => {
   position: absolute;
   bottom: 6px;
   left: 6px;
-  background: var(--cike-primary);
+  background: rgb(var(--v-theme-primary));
   color: #fff;
   font-size: 11px;
   padding: 2px 8px;
@@ -380,40 +388,32 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background: #f7f7f7;
-  border: 1px dashed #d5d5d5;
-  color: var(--cike-text-3);
+  background: rgb(var(--v-theme-surface-variant));
+  border: 1px dashed rgb(var(--v-theme-outline));
+  color: rgb(var(--v-theme-on-surface-variant));
   cursor: pointer;
   font-size: 12px;
 }
 .tip {
   margin-top: 10px;
   font-size: 12px;
-  color: var(--cike-text-3);
+  color: rgb(var(--v-theme-on-surface-variant));
 }
 .edit-section {
   display: flex;
   flex-direction: column;
   gap: 18px;
 }
-.title-input :deep(.el-input__wrapper) {
-  box-shadow: none;
-  padding-left: 0;
-}
-.title-input :deep(.el-input__inner) {
+.title-input :deep(.v-field) {
   font-size: 20px;
   font-weight: 600;
 }
-.edit-section :deep(.el-textarea__inner) {
-  font-size: 15px;
-  line-height: 1.6;
-  box-shadow: none;
-  background: #fafafa;
-  border-radius: 10px;
+.title-input :deep(.v-field__input) {
+  padding-left: 0;
 }
 .block-label {
   font-size: 14px;
-  color: var(--cike-text-2);
+  color: rgb(var(--v-theme-on-surface-variant));
   margin-bottom: 10px;
   font-weight: 500;
 }
@@ -423,21 +423,7 @@ onMounted(() => {
   gap: 8px;
 }
 .topic {
-  padding: 6px 14px;
-  border-radius: 16px;
-  background: #f5f5f5;
-  color: var(--cike-text-2);
-  font-size: 13px;
   cursor: pointer;
-  transition: all 0.15s ease;
-}
-.topic:hover {
-  color: var(--cike-primary);
-}
-.topic.active {
-  background: var(--cike-primary-soft);
-  color: var(--cike-primary);
-  border: 1px solid var(--cike-primary);
 }
 .selected-topics {
   display: flex;

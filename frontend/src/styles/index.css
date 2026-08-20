@@ -1,26 +1,7 @@
 /* ============================================================
-   「此刻」全局样式 —— 极简清新，柔和暖 / 偏红棕色调（对标小红书）
-   断点：移动端 ≤768 / 平板 769-1200 / 电脑端 ≥1201
+   「此刻」全局样式 —— Material Design 3 (MD3)
+   MD3 设计 token：色板见 plugins/vuetify.js（珊瑚暖红种子色）
    ============================================================ */
-:root {
-  /* 品牌主色：柔和偏红棕 */
-  --cike-primary: #ff2442;
-  --cike-primary-dark: #e01e38;
-  --cike-primary-soft: #ffebeef0;
-  --cike-warm: #b4532a;
-  --cike-bg: #f7f7f7;
-  --cike-card: #ffffff;
-  --cike-text: #1f2329;
-  --cike-text-2: #5f6672;
-  --cike-text-3: #969ba6;
-  --cike-border: #ececec;
-  --cike-radius: 14px;
-  --cike-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-  --cike-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.1);
-
-  --header-h: 56px;
-}
-
 * {
   margin: 0;
   padding: 0;
@@ -30,11 +11,12 @@
 html,
 body {
   height: 100%;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+  font-family: 'Roboto', system-ui, -apple-system, 'Segoe UI', 'PingFang SC',
     'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
-  color: var(--cike-text);
-  background: var(--cike-bg);
+  color: rgb(var(--v-theme-on-surface));
+  background: rgb(var(--v-theme-background));
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #app {
@@ -61,24 +43,14 @@ button {
   height: 6px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #d5d5d5;
+  background: rgb(var(--v-theme-outline-variant));
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #bebebe;
+  background: rgb(var(--v-theme-outline));
 }
 ::-webkit-scrollbar-track {
   background: transparent;
-}
-
-/* -------------------- Element Plus 主题覆盖 -------------------- */
-.el-button--primary {
-  --el-button-bg-color: var(--cike-primary);
-  --el-button-border-color: var(--cike-primary);
-  --el-button-hover-bg-color: var(--cike-primary-dark);
-  --el-button-hover-border-color: var(--cike-primary-dark);
-  --el-button-active-bg-color: var(--cike-primary-dark);
-  --el-button-active-border-color: var(--cike-primary-dark);
 }
 
 /* -------------------- 通用工具类 -------------------- */
@@ -86,7 +58,7 @@ button {
   width: 100%;
   max-width: 480px;
   margin: 0 auto;
-  padding-bottom: calc(60px + env(safe-area-inset-bottom));
+  padding-bottom: calc(72px + env(safe-area-inset-bottom));
 }
 
 .ellipsis {
@@ -116,17 +88,43 @@ button {
   transform: translateY(-10px);
 }
 
-/* -------------------- 断点适配 -------------------- */
-/* 平板 (769-1200) */
-@media (min-width: 769px) {
-  :root {
-    --header-h: 60px;
-  }
+/* MD3 类型层级（全局辅助类） */
+.m3-title-large {
+  font-size: 22px;
+  font-weight: 400;
+  line-height: 1.27;
+  letter-spacing: 0;
+}
+.m3-title-medium {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.15px;
+}
+.m3-body-medium {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.43;
+  letter-spacing: 0.25px;
+}
+.m3-body-small {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.33;
+  letter-spacing: 0.4px;
+}
+.m3-label-large {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.43;
+  letter-spacing: 0.1px;
 }
 
-/* 电脑端 (≥1201) */
-@media (min-width: 1201px) {
-  :root {
-    --header-h: 64px;
-  }
+/* 图片安全占位（网格瀑布流中防止布局抖动） */
+.m3-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  background: rgb(var(--v-theme-surface-variant));
 }

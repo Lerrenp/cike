@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { ElMessage } from 'element-plus'
+import { toast } from '@/utils/toast'
 import router from '@/router'
 
 // 统一 axios 实例
@@ -32,7 +32,7 @@ request.interceptors.response.use(
       if (res.code === 401) {
         handleUnauthorized()
       }
-      ElMessage.error(res.message || '请求失败')
+      toast.error(res.message || '请求失败')
       return Promise.reject(new Error(res.message || '请求失败'))
     }
     return res
@@ -42,15 +42,15 @@ request.interceptors.response.use(
     if (status === 401) {
       handleUnauthorized()
     } else if (status === 403) {
-      ElMessage.error('没有权限执行该操作')
+      toast.error('没有权限执行该操作')
     } else if (status === 404) {
-      ElMessage.error('请求的资源不存在')
+      toast.error('请求的资源不存在')
     } else if (status >= 500) {
-      ElMessage.error('服务器开小差了，请稍后重试')
+      toast.error('服务器开小差了，请稍后重试')
     } else if (error.code === 'ECONNABORTED') {
-      ElMessage.error('请求超时，请稍后重试')
+      toast.error('请求超时，请稍后重试')
     } else if (!error.response) {
-      ElMessage.error('网络连接失败，请检查后端服务是否启动')
+      toast.error('网络连接失败，请检查后端服务是否启动')
     }
     return Promise.reject(error)
   }
@@ -62,7 +62,7 @@ function handleUnauthorized() {
   localStorage.removeItem('cike_user')
   const current = router.currentRoute.value
   if (current.path !== '/login') {
-    ElMessage.warning('登录已失效，请重新登录')
+    toast.warning('登录已失效，请重新登录')
     router.push({ path: '/login', query: { redirect: current.fullPath } })
   }
 }

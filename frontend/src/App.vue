@@ -1,11 +1,9 @@
 <template>
-  <router-view v-slot="{ Component }">
-    <transition name="fade-slide" mode="out-in">
-      <component :is="Component" />
-    </transition>
-  </router-view>
+  <v-app>
+    <router-view />
+  </v-app>
 </template>
 
 <script setup>
-// 根组件：仅承载路由出口
+// MD3 入口壳：全局 v-app 容器
 </script>

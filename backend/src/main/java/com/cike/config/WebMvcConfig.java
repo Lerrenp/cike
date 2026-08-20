@@ -14,13 +14,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     private final AuthInterceptor authInterceptor;
 
-    /** 无需登录可访问的路径 */
+    /** 无需登录可访问的路径（注意：/notes 列表/详情仅对 GET 匿名放行，见 AuthInterceptor；POST 发布 / DELETE 需登录） */
     private static final String[] PUBLIC_PATHS = {
             "/auth/sms/code",
             "/auth/register",
             "/auth/login",
-            "/notes",
-            "/notes/*",
             "/users",
             "/users/*",
             "/topics"
