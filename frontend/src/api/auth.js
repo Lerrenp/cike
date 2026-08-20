@@ -14,6 +14,10 @@ export const authApi = {
   login(data) {
     return request.post('/auth/login', data)
   },
+  // 用 HttpOnly cookie/Bearer 恢复当前会话
+  session(config) {
+    return request.post('/auth/session', null, config)
+  },
   // 退出登录
   logout() {
     return request.post('/auth/logout')

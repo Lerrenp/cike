@@ -5,8 +5,16 @@ import router from './router'
 import vuetify from './plugins/vuetify'
 import './styles/index.css'
 
+const pinia = createPinia()
 const app = createApp(App)
-app.use(createPinia())
-app.use(router)
+app.use(pinia)
 app.use(vuetify)
-app.mount('#app')
+
+async function bootstrap() {
+  const { useUserStore } = await import('./stores/user')
+  await useUserStore(pinia).restoreSession()
+  app.use(router)
+  app.mount('#app')
+}
+
+bootstrap()

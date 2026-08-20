@@ -1,11 +1,11 @@
 import axios from 'axios'
 import { toast } from '@/utils/toast'
-import router from '@/router'
 
 // 统一 axios 实例
 const request = axios.create({
   baseURL: '/api/v1',
   timeout: 15000,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json'
   }
@@ -27,12 +27,13 @@ request.interceptors.request.use(
 request.interceptors.response.use(
   (response) => {
     const res = response.data
-    // 后端统一返回 { code, message, data }
     if (res && res.code !== undefined && res.code !== 200) {
-      if (res.code === 401) {
+      if (res.code === 401 && !response.config.skipAuthRedirect) {
         handleUnauthorized()
       }
-      toast.error(res.message || '请求失败')
+      if (!response.config.skipAuthRedirect) {
+        toast.error(res.message || '请求失败')
+      }
       return Promise.reject(new Error(res.message || '请求失败'))
     }
     return res
@@ -55,16 +56,14 @@ request.interceptors.response.use(
     return Promise.reject(error)
   }
 )
-
-// 401：清除登录态并跳转登录页
 function handleUnauthorized() {
   localStorage.removeItem('cike_token')
   localStorage.removeItem('cike_user')
-  const current = router.currentRoute.value
-  if (current.path !== '/login') {
-    toast.warning('登录已失效，请重新登录')
-    router.push({ path: '/login', query: { redirect: current.fullPath } })
-  }
+  if (window.location.pathname === '/login') return
+
+  toast.warning('登录已失效，请重新登录')
+  const redirect = `${window.location.pathname}${window.location.search}${window.location.hash}`
+  window.location.replace(`/login?redirect=${encodeURIComponent(redirect)}`)
 }
 
 export default request

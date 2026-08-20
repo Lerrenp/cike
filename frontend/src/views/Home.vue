@@ -89,7 +89,7 @@
         <div v-if="loading" class="load-state">
           <v-progress-circular indeterminate :size="24" color="primary" />
         </div>
-        <div v-else-if="notes.length" class="load-state end">{{ finished ? '没有更多内容啦' : '加载中…' }}</div>
+        <div v-else-if="notes.length && finished" class="load-state end">没有更多内容啦</div>
       </main>
 
       <!-- 底部 tab（移动/平板） -->

@@ -6,13 +6,21 @@ import { userApi } from '@/api/user'
 const TOKEN_KEY = 'cike_token'
 const USER_KEY = 'cike_user'
 
+function readStoredUser() {
+  try {
+    return JSON.parse(localStorage.getItem(USER_KEY) || 'null')
+  } catch {
+    localStorage.removeItem(USER_KEY)
+    return null
+  }
+}
 export const useUserStore = defineStore('user', {
   state: () => ({
     token: localStorage.getItem(TOKEN_KEY) || '',
-    userInfo: JSON.parse(localStorage.getItem(USER_KEY) || 'null')
+    userInfo: readStoredUser()
   }),
   getters: {
-    isLogin: (state) => !!state.token,
+    isLogin: (state) => !!state.token || !!state.userInfo,
     userId: (state) => state.userInfo?.id || null,
     isSelf: (state) => (id) => state.userInfo?.id === id
   },
@@ -36,6 +44,24 @@ export const useUserStore = defineStore('user', {
       const { token, user } = res.data
       this.setAuth(token, user)
       return res
+    },
+    // 应用启动时验证 cookie/Bearer，并修复协议切换后的登录态
+    async restoreSession() {
+      try {
+        const res = await authApi.session({ skipAuthRedirect: true })
+        const user = res?.data
+        if (user) {
+          this.userInfo = user
+          localStorage.setItem(USER_KEY, JSON.stringify(user))
+        }
+        return !!user
+      } catch {
+        this.token = ''
+        this.userInfo = null
+        localStorage.removeItem(TOKEN_KEY)
+        localStorage.removeItem(USER_KEY)
+        return false
+      }
     },
     // 更新本地用户信息（修改资料后）
     updateUserInfo(patch) {
